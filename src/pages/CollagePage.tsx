@@ -755,18 +755,20 @@ const CollagePage: React.FC = () => {
                           alt="Collage piece" 
                         />
                         <div className="absolute inset-x-0 bottom-0 p-2 flex justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity bg-gradient-to-t from-black/60 to-transparent pointer-events-none">
-                           <button 
-                             onClick={(e) => { 
-                               e.stopPropagation(); 
-                               const newSlots = { ...slotData }; 
-                               delete newSlots[slot.id]; 
-                               setSlotData(newSlots);
-                               setTimeout(pushToHistory, 0);
-                             }} 
-                             className="p-1.5 bg-red-500 rounded-lg text-white hover:scale-110 transition-transform shadow-lg pointer-events-auto"
-                           >
-                             <Trash2 className="w-3.5 h-3.5" />
-                           </button>
+                           <Tooltip content="Remove Layer" position="top">
+                             <button 
+                               onClick={(e) => { 
+                                 e.stopPropagation(); 
+                                 const newSlots = { ...slotData }; 
+                                 delete newSlots[slot.id]; 
+                                 setSlotData(newSlots);
+                                 setTimeout(pushToHistory, 0);
+                               }} 
+                               className="p-1.5 bg-red-500 rounded-lg text-white hover:scale-110 transition-transform shadow-lg pointer-events-auto"
+                             >
+                               <Trash2 className="w-3.5 h-3.5" />
+                             </button>
+                           </Tooltip>
                         </div>
                       </div>
                     ) : (
@@ -893,18 +895,18 @@ const CollagePage: React.FC = () => {
               <span className="text-[10px] font-bold text-white/40 uppercase tracking-wider">Background</span>
               <div className="flex flex-wrap gap-2">
                 {BG_COLORS.map(color => (
-                  <button
-                    key={color.value}
-                    onClick={() => {
-                      setBgColor(color.value);
-                      setTimeout(pushToHistory, 0);
-                    }}
-                    title={color.name}
-                    className={`w-8 h-8 rounded-full border-2 transition-all ${
-                      bgColor === color.value ? 'border-orange-500' : 'border-white/10 hover:border-white/30'
-                    }`}
-                    style={{ backgroundColor: color.value }}
-                  />
+                  <Tooltip key={color.value} content={color.name} position="top">
+                    <button
+                      onClick={() => {
+                        setBgColor(color.value);
+                        setTimeout(pushToHistory, 0);
+                      }}
+                      className={`w-8 h-8 rounded-full border-2 transition-all ${
+                        bgColor === color.value ? 'border-orange-500' : 'border-white/10 hover:border-white/30'
+                      }`}
+                      style={{ backgroundColor: color.value }}
+                    />
+                  </Tooltip>
                 ))}
               </div>
             </div>

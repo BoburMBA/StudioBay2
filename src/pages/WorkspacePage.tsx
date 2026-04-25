@@ -20,6 +20,7 @@ import {
   Settings2,
   Check
 } from 'lucide-react';
+import { Tooltip } from '../components/Tooltip';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface Asset {
@@ -118,12 +119,14 @@ export default function WorkspacePage() {
           </div>
 
           <div className="flex items-center gap-3 relative">
-             <button 
-               onClick={() => setShowViewMenu(!showViewMenu)}
-               className="px-3 py-2 hover:bg-white/5 rounded-lg border border-white/5 text-white/70 hover:text-white transition-all flex items-center gap-2 text-sm font-medium"
-             >
-                <LayoutGrid className="w-4 h-4" /> View <ChevronDown className="w-3 h-3 ml-1" />
-             </button>
+             <Tooltip content="Change View" position="bottom" className="flex-none">
+               <button 
+                 onClick={() => setShowViewMenu(!showViewMenu)}
+                 className="px-3 py-2 hover:bg-white/5 rounded-lg border border-white/5 text-white/70 hover:text-white transition-all flex items-center gap-2 text-sm font-medium"
+               >
+                  <LayoutGrid className="w-4 h-4" /> View <ChevronDown className="w-3 h-3 ml-1" />
+               </button>
+             </Tooltip>
              
              <AnimatePresence>
                 {showViewMenu && (
@@ -153,9 +156,11 @@ export default function WorkspacePage() {
                   </motion.div>
                 )}
              </AnimatePresence>
-             <button className="p-2 hover:bg-white/5 rounded-lg border border-white/5 text-white/50 hover:text-white transition-all">
-                <Settings2 className="w-5 h-5" />
-             </button>
+             <Tooltip content="Workspace Settings" position="bottom">
+               <button className="p-2 hover:bg-white/5 rounded-lg border border-white/5 text-white/50 hover:text-white transition-all">
+                  <Settings2 className="w-5 h-5" />
+               </button>
+             </Tooltip>
           </div>
         </header>
 
@@ -238,19 +243,23 @@ export default function WorkspacePage() {
                         )}
                         
                         <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                          <button 
-                            onClick={() => handleView(asset)}
-                            className="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-md border border-white/10 transition-all scale-75 md:scale-100"
-                          >
-                            <ExternalLink className="w-4 h-4 md:w-5 md:h-5" />
-                          </button>
+                          <Tooltip content="Open Full Size" position="top">
+                            <button 
+                              onClick={() => handleView(asset)}
+                              className="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-md border border-white/10 transition-all scale-75 md:scale-100"
+                            >
+                              <ExternalLink className="w-4 h-4 md:w-5 md:h-5" />
+                            </button>
+                          </Tooltip>
                           {viewMode !== 'list' && viewMode !== 'small' && (
-                             <button 
-                                onClick={() => deleteAsset(asset.id)}
-                                className="w-10 h-10 bg-red-500/20 hover:bg-red-500/40 text-red-500 rounded-xl flex items-center justify-center backdrop-blur-md border border-red-500/20 transition-all scale-75 md:scale-100"
-                             >
-                               <Trash2 className="w-4 h-4 md:w-5 md:h-5" />
-                             </button>
+                             <Tooltip content="Delete Asset" position="top">
+                               <button 
+                                  onClick={() => deleteAsset(asset.id)}
+                                  className="w-10 h-10 bg-red-500/20 hover:bg-red-500/40 text-red-500 rounded-xl flex items-center justify-center backdrop-blur-md border border-red-500/20 transition-all scale-75 md:scale-100"
+                               >
+                                 <Trash2 className="w-4 h-4 md:w-5 md:h-5" />
+                               </button>
+                             </Tooltip>
                           )}
                         </div>
 
@@ -282,19 +291,23 @@ export default function WorkspacePage() {
                         {viewMode !== 'small' && (
                            <div className="flex gap-2 shrink-0 ml-4">
                               {viewMode === 'list' && (
-                                <button 
-                                  onClick={() => deleteAsset(asset.id)}
-                                  className="p-2 hover:bg-red-500/10 rounded-lg text-white/20 hover:text-red-500 transition-all"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
+                                <Tooltip content="Delete Asset" position="top">
+                                  <button 
+                                    onClick={() => deleteAsset(asset.id)}
+                                    className="p-2 hover:bg-red-500/10 rounded-lg text-white/20 hover:text-red-500 transition-all"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </Tooltip>
                               )}
-                              <button 
-                                onClick={() => handleDownload(asset)}
-                                className="p-2 hover:bg-white/5 rounded-lg text-white/20 hover:text-white transition-all shadow-sm"
-                              >
-                                <Download className="w-4 h-4" />
-                              </button>
+                              <Tooltip content="Download Asset" position="top">
+                                <button 
+                                  onClick={() => handleDownload(asset)}
+                                  className="p-2 hover:bg-white/5 rounded-lg text-white/20 hover:text-white transition-all shadow-sm"
+                                >
+                                  <Download className="w-4 h-4" />
+                                </button>
+                              </Tooltip>
                            </div>
                         )}
                       </div>
@@ -318,21 +331,25 @@ export default function WorkspacePage() {
             onClick={() => setViewingAsset(null)}
           >
              <div className="absolute top-8 right-8 flex gap-4">
-               <button 
-                 onClick={(e) => {
-                    e.stopPropagation();
-                    handleDownload(viewingAsset);
-                 }}
-                 className="p-3 bg-white/10 hover:bg-white/20 rounded-xl text-white transition-all backdrop-blur-md"
-               >
-                 <Download className="w-6 h-6" />
-               </button>
-               <button 
-                 onClick={() => setViewingAsset(null)}
-                 className="p-3 bg-white/10 hover:bg-white/20 rounded-xl text-white transition-all backdrop-blur-md"
-               >
-                 <X className="w-6 h-6" />
-               </button>
+               <Tooltip content="Download Image" position="bottom">
+                 <button 
+                   onClick={(e) => {
+                      e.stopPropagation();
+                      handleDownload(viewingAsset);
+                   }}
+                   className="p-3 bg-white/10 hover:bg-white/20 rounded-xl text-white transition-all backdrop-blur-md"
+                 >
+                   <Download className="w-6 h-6" />
+                 </button>
+               </Tooltip>
+               <Tooltip content="Close Overview" position="bottom">
+                 <button 
+                   onClick={() => setViewingAsset(null)}
+                   className="p-3 bg-white/10 hover:bg-white/20 rounded-xl text-white transition-all backdrop-blur-md"
+                 >
+                   <X className="w-6 h-6" />
+                 </button>
+               </Tooltip>
              </div>
              
              <motion.img 

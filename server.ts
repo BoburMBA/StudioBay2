@@ -248,7 +248,7 @@ async function startServer() {
       } else {
         // Fallback for custom or gemini
         const { GoogleGenAI } = await import("@google/genai");
-        const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_GENAI_API_KEY });
+        const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
         const response = await ai.models.generateContent({
            model: "gemini-2.5-pro",
            contents: [
@@ -262,6 +262,60 @@ async function startServer() {
       res.status(500).json({
         error: error.message || "Failed to generate lyrics via proxy"
       });
+    }
+  });
+
+  // Proxy endpoint for Stem Separation via Replicate Demucs
+  app.post("/api/ai/separate-audio", async (req, res) => {
+    const { url, replicateApiKey } = req.body;
+    if (!replicateApiKey) {
+      return res.status(400).json({error: "Replicate API Key is required for audio stem separation. Please add it in AI Config."});
+    }
+    
+    try {
+      // Demucs model on Replicate
+      const startRes = await fetch("https://api.replicate.com/v1/predictions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${replicateApiKey}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          version: "25a173108cff36ef9f80f854c162d01df9e6528be175794b81158fa03836d953", // cjwbw/demucs
+          input: {
+             audio: url
+          }
+        })
+      });
+      const prediction = await startRes.json();
+      if (prediction.error) throw new Error(prediction.error);
+      
+      // Poll for status
+      let checkPrediction = prediction;
+      let polls = 0;
+      while (
+        checkPrediction.status !== "succeeded" &&
+        checkPrediction.status !== "failed" &&
+        checkPrediction.status !== "canceled" &&
+        polls < 60 // 2 minutes timeout
+      ) {
+        await new Promise(r => setTimeout(r, 2000));
+        polls++;
+        const checkRes = await fetch("https://api.replicate.com/v1/predictions/" + checkPrediction.id, {
+          headers: {
+            "Authorization": `Bearer ${replicateApiKey}`,
+          }
+        });
+        checkPrediction = await checkRes.json();
+      }
+      
+      if (checkPrediction.status === "succeeded") {
+         return res.json({ stems: checkPrediction.output }); 
+      } else {
+         throw new Error("Prediction failed or timed out: " + (checkPrediction.error || checkPrediction.status));
+      }
+    } catch(e: any) {
+      res.status(500).json({ error: e.message });
     }
   });
 

@@ -20,6 +20,7 @@ import confetti from 'canvas-confetti';
 import { processFile, calculateDpi, getResolutionStatus, sharpenImage } from '../lib/imageUtils';
 import { ImageData, PrintSettings } from '../types';
 import { Navigation } from '../components/Navigation';
+import { Tooltip } from '../components/Tooltip';
 
 export default function EditorPage() {
   const navigate = useNavigate();
@@ -228,32 +229,40 @@ export default function EditorPage() {
           <div className="flex items-center gap-3">
             {image && (
               <div className="flex items-center bg-white/5 border border-white/10 rounded-lg px-2 gap-2">
-                <button 
-                  onClick={() => setEditorZoom(1)}
-                  className="text-[10px] font-bold text-orange-500 hover:text-orange-400 uppercase tracking-tighter transition-colors"
-                >
-                  Reset
-                </button>
+                <Tooltip content="Reset Zoom" position="bottom">
+                  <button 
+                    onClick={() => setEditorZoom(1)}
+                    className="text-[10px] font-bold text-orange-500 hover:text-orange-400 uppercase tracking-tighter transition-colors"
+                  >
+                    Reset
+                  </button>
+                </Tooltip>
                 <div className="w-px h-3 bg-white/10 mx-1" />
-                <span className="text-[10px] font-bold text-white/30 uppercase">Zoom</span>
-                <input 
-                  type="range" 
-                  min="0.1" 
-                  max="1" 
-                  step="0.05" 
-                  value={editorZoom} 
-                  onChange={(e) => setEditorZoom(Number(e.target.value))}
-                  className="w-20 accent-orange-500 cursor-pointer h-1"
-                />
+                <Tooltip content="Zoom Editor View" position="bottom">
+                  <span className="text-[10px] font-bold text-white/30 uppercase flex items-center gap-2">
+                    Zoom
+                    <input 
+                      type="range" 
+                      min="0.1" 
+                      max="1" 
+                      step="0.05" 
+                      value={editorZoom} 
+                      onChange={(e) => setEditorZoom(Number(e.target.value))}
+                      className="w-20 accent-orange-500 cursor-pointer h-1"
+                    />
+                  </span>
+                </Tooltip>
                 <span className="text-[10px] font-mono text-white/60 w-8">{Math.round(editorZoom * 100)}%</span>
               </div>
             )}
-            <button 
-              onClick={() => fileInputRef.current?.click()}
-              className="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-xs font-semibold flex items-center gap-2 transition-all"
-            >
-              <Upload className="w-4 h-4" /> Replace Image
-            </button>
+            <Tooltip content="Replace Current Image" position="left">
+              <button 
+                onClick={() => fileInputRef.current?.click()}
+                className="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-xs font-semibold flex items-center gap-2 transition-all"
+              >
+                <Upload className="w-4 h-4" /> Replace Image
+              </button>
+            </Tooltip>
           </div>
         </div>
 
@@ -348,15 +357,17 @@ export default function EditorPage() {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <label className="text-[10px] font-bold text-white/30 uppercase tracking-[0.2em]">Print Specifications</label>
-              <button 
-                onClick={() => setAspectLocked(!aspectLocked)}
-                className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-[9px] font-bold uppercase tracking-wider transition-all ${
-                  aspectLocked ? 'bg-orange-500/10 text-orange-500' : 'bg-white/5 text-white/30 hover:bg-white/10'
-                }`}
-              >
-                {aspectLocked ? <Link2 className="w-3 h-3" /> : <Link2Off className="w-3 h-3" />}
-                {aspectLocked ? 'Locked' : 'Unlocked'}
-              </button>
+              <Tooltip content="Toggle Aspect Ratio Lock Check" position="left">
+                <button 
+                  onClick={() => setAspectLocked(!aspectLocked)}
+                  className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-[9px] font-bold uppercase tracking-wider transition-all ${
+                    aspectLocked ? 'bg-orange-500/10 text-orange-500' : 'bg-white/5 text-white/30 hover:bg-white/10'
+                  }`}
+                >
+                  {aspectLocked ? <Link2 className="w-3 h-3" /> : <Link2Off className="w-3 h-3" />}
+                  {aspectLocked ? 'Locked' : 'Unlocked'}
+                </button>
+              </Tooltip>
             </div>
             <div className="grid grid-cols-2 gap-3 relative">
               <div className="space-y-1.5">

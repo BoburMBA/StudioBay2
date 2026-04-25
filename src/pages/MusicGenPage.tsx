@@ -17,7 +17,8 @@ import {
   MessageSquare,
   Wand2,
   X,
-  Eraser
+  Eraser,
+  Scissors
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import confetti from 'canvas-confetti';
@@ -38,13 +39,15 @@ interface AiConfig {
   apiKey: string;
   baseUrl: string;
   model: string;
+  replicateApiKey?: string;
 }
 
 const DEFAULT_CONFIG: AiConfig = {
   provider: 'minimax',
   apiKey: '',
   baseUrl: 'https://api.minimax.io/v1/music_generation',
-  model: 'music-2.6'
+  model: 'music-2.6',
+  replicateApiKey: ''
 };
 
 const SAMPLE_TRACKS = [
@@ -291,6 +294,90 @@ export default function MusicGenPage() {
     }
   };
 
+  const [isSeparating, setIsSeparating] = useState(false);
+
+  const separateStems = async (track: GeneratedTrack) => {
+    if (!config.replicateApiKey) {
+      setErrorMsg("Please add your Replicate API Key in AI Config to use Stem Separation.");
+      setShowSettings(true);
+      return;
+    }
+
+    setIsSeparating(true);
+    setErrorMsg('');
+
+    try {
+      const response = await fetch('/api/ai/separate-audio', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: track.url, replicateApiKey: config.replicateApiKey })
+      });
+
+      if (!response.ok) {
+        throw new Error(await response.text());
+      }
+
+      const data = await response.json();
+      if (!data.stems) throw new Error("No stems returned from separation");
+
+      const newStems: GeneratedTrack[] = [];
+      const stemsObj = data.stems;
+
+      // Extract each stem
+      for (const [key, audioUrl] of Object.entries(stemsObj)) {
+        if (typeof audioUrl === 'string' && audioUrl.startsWith('http')) {
+          const stemTrack: GeneratedTrack = {
+            id: crypto.randomUUID(),
+            name: `${track.name} (${key.charAt(0).toUpperCase() + key.slice(1)})`,
+            prompt: `Extracted ${key} from: ${track.name}`,
+            url: audioUrl,
+            coverUrl: track.coverUrl,
+            createdAt: new Date().toISOString()
+          };
+          newStems.push(stemTrack);
+        }
+      }
+
+      if (newStems.length > 0) {
+        let assets = [];
+        try {
+          const stored = localStorage.getItem('studio_assets');
+          if (stored) assets = JSON.parse(stored);
+          if (!Array.isArray(assets)) assets = [];
+        } catch (e) {
+          console.error("Safely parsing assets failed", e);
+        }
+
+        const newAssets = newStems.map(t => ({
+          id: t.id,
+          name: t.name,
+          type: 'music',
+          url: t.url,
+          coverUrl: t.coverUrl,
+          createdAt: t.createdAt,
+          metadata: { prompt: t.prompt }
+        }));
+        
+        localStorage.setItem('studio_assets', JSON.stringify([...newAssets, ...assets]));
+        setHistory(prev => [...newStems, ...prev]);
+        
+        confetti({
+          particleCount: 100,
+          spread: 60,
+          origin: { y: 0.8 },
+          colors: ['#3b82f6', '#10b981', '#ffffff']
+        });
+        
+        alert("Stems successfully separated and added to your library!");
+      }
+    } catch (error: any) {
+      console.error('Stem separation failed:', error);
+      setErrorMsg("Separation failed: " + (error.message || error));
+    } finally {
+      setIsSeparating(false);
+    }
+  };
+
   const togglePlay = () => {
     if (!audioRef.current || !currentTrack) return;
     if (isPlaying) {
@@ -321,31 +408,19 @@ export default function MusicGenPage() {
           </div>
 
           <div className="flex items-center gap-3">
-             <Tooltip content="Clear Form" position="bottom">
-                <button
-                  onClick={() => {
-                    setTitle('');
-                    setPrompt('');
-                    setLyrics('');
-                    setVocalStyle('duet');
-                  }}
-                  className="p-2.5 rounded-xl border border-white/10 bg-white/5 text-white/50 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/20 transition-all flex items-center justify-center group"
-                >
-                  <Eraser className="w-4 h-4" />
-                </button>
+             <Tooltip content="Configure AI Engine" position="left">
+               <button 
+                onClick={() => setShowSettings(!showSettings)}
+                className={`p-2.5 rounded-xl border transition-all flex items-center gap-2 font-bold uppercase text-[10px] tracking-widest ${
+                  showSettings 
+                    ? 'bg-indigo-500 border-indigo-500 text-white' 
+                    : 'bg-white/5 border-white/10 text-white/50 hover:bg-white/10 hover:text-white'
+                }`}
+               >
+                 <Settings className={`w-4 h-4 ${showSettings ? 'animate-spin-slow' : ''}`} />
+                 AI Config
+               </button>
              </Tooltip>
-
-             <button 
-              onClick={() => setShowSettings(!showSettings)}
-              className={`p-2.5 rounded-xl border transition-all flex items-center gap-2 font-bold uppercase text-[10px] tracking-widest ${
-                showSettings 
-                  ? 'bg-indigo-500 border-indigo-500 text-white' 
-                  : 'bg-white/5 border-white/10 text-white/50 hover:bg-white/10 hover:text-white'
-              }`}
-             >
-               <Settings className={`w-4 h-4 ${showSettings ? 'animate-spin-slow' : ''}`} />
-               AI Config
-             </button>
           </div>
         </header>
 
@@ -365,12 +440,27 @@ export default function MusicGenPage() {
                   <label className="text-[10px] font-bold text-white/40 uppercase tracking-widest">
                     Style of Music
                   </label>
-                  <button
-                    onClick={() => setShowStyles(!showStyles)}
-                    className="px-2 py-1 bg-white/5 hover:bg-white/10 border border-white/10 rounded-md text-[9px] font-bold uppercase tracking-wider transition-all"
-                  >
-                    {showStyles ? 'Hide' : 'Browse'}
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <Tooltip content="Clear Form" position="top">
+                      <button
+                        onClick={() => {
+                          setTitle('');
+                          setPrompt('');
+                          setLyrics('');
+                          setVocalStyle('duet');
+                        }}
+                        className="p-1 rounded-md border border-white/10 bg-white/5 text-white/50 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/20 transition-all flex items-center justify-center group"
+                      >
+                        <Eraser className="w-3.5 h-3.5" />
+                      </button>
+                    </Tooltip>
+                    <button
+                      onClick={() => setShowStyles(!showStyles)}
+                      className="px-2 py-1 bg-white/5 hover:bg-white/10 border border-white/10 rounded-md text-[9px] font-bold uppercase tracking-wider transition-all"
+                    >
+                      {showStyles ? 'Hide' : 'Browse'}
+                    </button>
+                  </div>
                 </div>
                 {showStyles && (
                   <div className="flex gap-2 mb-2 flex-wrap">
@@ -548,6 +638,22 @@ export default function MusicGenPage() {
                           className="w-full bg-black/40 border border-white/5 rounded-lg p-2.5 text-xs text-white/80 focus:border-indigo-500/50 outline-none"
                         />
                       </div>
+                      
+                      <div className="pt-2 pb-2">
+                        <div className="h-px bg-white/10 w-full mb-2"></div>
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] font-bold text-white/30 uppercase flex items-center gap-2">
+                            <Key className="w-3 h-3" /> Replicate API Key (Stems)
+                          </label>
+                          <input 
+                            type="password" 
+                            value={config.replicateApiKey || ''}
+                            onChange={(e) => setConfig(c => ({ ...c, replicateApiKey: e.target.value }))}
+                            className="w-full bg-black/40 border border-white/5 rounded-lg p-2.5 text-xs text-white/80 focus:border-indigo-500/50 outline-none"
+                            placeholder="r8_..."
+                          />
+                        </div>
+                      </div>
 
                       <button
                         onClick={() => {
@@ -609,12 +715,14 @@ export default function MusicGenPage() {
 
                            <div className="flex items-center justify-between mt-2">
                              <div className="flex items-center gap-4">
-                               <button 
-                                 onClick={togglePlay}
-                                 className="w-14 h-14 bg-white text-black rounded-full flex items-center justify-center hover:scale-105 active:scale-95 transition-transform shadow-lg"
-                               >
-                                 {isPlaying ? <Pause className="w-6 h-6 fill-current" /> : <Play className="w-6 h-6 fill-current ml-1" />}
-                               </button>
+                               <Tooltip content={isPlaying ? "Pause Track" : "Play Track"} position="top">
+                                 <button 
+                                   onClick={togglePlay}
+                                   className="w-14 h-14 bg-white text-black rounded-full flex items-center justify-center hover:scale-105 active:scale-95 transition-transform shadow-lg"
+                                 >
+                                   {isPlaying ? <Pause className="w-6 h-6 fill-current" /> : <Play className="w-6 h-6 fill-current ml-1" />}
+                                 </button>
+                               </Tooltip>
                                <Tooltip content="Download Track">
                                  <a 
                                    href={currentTrack.url}
@@ -659,6 +767,20 @@ export default function MusicGenPage() {
                                    className="ml-2 p-2 rounded-full text-white/60 hover:text-white hover:bg-white/10 transition-colors"
                                  >
                                     <Wand2 className="w-5 h-5" />
+                                 </button>
+                               </Tooltip>
+                               
+                               <Tooltip content="Separate Vocals & Music">
+                                 <button
+                                   onClick={() => separateStems(currentTrack)}
+                                   disabled={isSeparating}
+                                   className={`ml-2 p-2 rounded-full transition-colors ${
+                                     isSeparating 
+                                        ? 'bg-indigo-500/50 text-indigo-200 cursor-not-allowed' 
+                                        : 'text-white/60 hover:text-white hover:bg-white/10'
+                                   }`}
+                                 >
+                                    {isSeparating ? <RotateCw className="w-5 h-5 animate-spin" /> : <Scissors className="w-5 h-5" />}
                                  </button>
                                </Tooltip>
                              </div>

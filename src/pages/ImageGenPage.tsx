@@ -429,16 +429,17 @@ export default function ImageGenPage() {
                   {ASPECT_RATIOS.map(ratio => {
                     const Icon = ratio.icon;
                     return (
-                      <button
-                        key={ratio.value}
-                        onClick={() => setAspectRatio(ratio.value)}
-                        className={`flex flex-col items-center justify-center w-14 h-12 rounded-xl gap-1 transition-all ${
-                          aspectRatio === ratio.value ? 'bg-white/10 text-white shadow-inner border border-white/10' : 'text-white/40 hover:bg-white/5 hover:text-white border border-transparent'
-                        }`}
-                      >
-                        <Icon className="w-4 h-4" />
-                        <span className="text-[9px] font-bold tracking-wider">{ratio.label}</span>
-                      </button>
+                      <Tooltip key={ratio.value} content={`Aspect Ratio ${ratio.label}`} position="top">
+                        <button
+                          onClick={() => setAspectRatio(ratio.value)}
+                          className={`flex flex-col items-center justify-center w-14 h-12 rounded-xl gap-1 transition-all ${
+                            aspectRatio === ratio.value ? 'bg-white/10 text-white shadow-inner border border-white/10' : 'text-white/40 hover:bg-white/5 hover:text-white border border-transparent'
+                          }`}
+                        >
+                          <Icon className="w-4 h-4" />
+                          <span className="text-[9px] font-bold tracking-wider">{ratio.label}</span>
+                        </button>
+                      </Tooltip>
                     );
                   })}
                 </div>
@@ -447,15 +448,16 @@ export default function ImageGenPage() {
 
                 <div className="flex gap-1 items-center px-1">
                   {BATCH_COUNTS.map(count => (
-                    <button
-                      key={count}
-                      onClick={() => setBatchSize(count)}
-                      className={`w-12 h-12 flex items-center justify-center rounded-xl transition-all font-bold text-xs ${
-                        batchSize === count ? 'bg-white/10 text-white shadow-inner border border-white/10' : 'text-white/40 hover:bg-white/5 hover:text-white border border-transparent'
-                      }`}
-                    >
-                      x{count}
-                    </button>
+                    <Tooltip key={count} content={`Generate ${count} Images`} position="top">
+                      <button
+                        onClick={() => setBatchSize(count)}
+                        className={`w-12 h-12 flex items-center justify-center rounded-xl transition-all font-bold text-xs ${
+                          batchSize === count ? 'bg-white/10 text-white shadow-inner border border-white/10' : 'text-white/40 hover:bg-white/5 hover:text-white border border-transparent'
+                        }`}
+                      >
+                        x{count}
+                      </button>
+                    </Tooltip>
                   ))}
                 </div>
               </div>
@@ -476,13 +478,15 @@ export default function ImageGenPage() {
                       }}
                     />
                   </div>
-                  <button 
-                    onClick={generateImage}
-                    disabled={isGenerating || !prompt.trim()}
-                    className="w-20 h-20 bg-orange-500 hover:bg-orange-600 disabled:bg-white/5 disabled:text-white/10 rounded-3xl flex items-center justify-center shadow-lg shadow-orange-500/40 active:scale-95 transition-all text-white group shrink-0"
-                  >
-                    <Send className="w-7 h-7 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
-                  </button>
+                  <Tooltip content="Generate Images from Prompt" position="top">
+                    <button 
+                      onClick={generateImage}
+                      disabled={isGenerating || !prompt.trim()}
+                      className="w-20 h-20 bg-orange-500 hover:bg-orange-600 disabled:bg-white/5 disabled:text-white/10 rounded-3xl flex items-center justify-center shadow-lg shadow-orange-500/40 active:scale-95 transition-all text-white group shrink-0"
+                    >
+                      <Send className="w-7 h-7 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+                    </button>
+                  </Tooltip>
                 </div>
               </div>
             </div>
@@ -495,12 +499,14 @@ export default function ImageGenPage() {
                 <History className="w-4 h-4 text-white/30" />
                 <span className="text-[10px] font-bold text-white/30 uppercase tracking-[0.2em]">History</span>
               </div>
-              <button 
-                onClick={() => setHistory([])}
-                className="text-[10px] font-bold text-red-500/50 hover:text-red-500 uppercase tracking-widest transition-colors"
-              >
-                Clear
-              </button>
+              <Tooltip content="Clear History" position="left">
+                <button 
+                  onClick={() => setHistory([])}
+                  className="text-[10px] font-bold text-red-500/50 hover:text-red-500 uppercase tracking-widest transition-colors"
+                >
+                  Clear
+                </button>
+              </Tooltip>
             </div>
             <div className="flex-1 overflow-y-auto custom-scrollbar p-8 space-y-8">
               {history.length === 0 ? (
